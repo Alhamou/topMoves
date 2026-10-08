@@ -75,7 +75,7 @@ public struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     public var trailers: [Trailer]
     public var seasons: [Season]
     public var isDemo: Bool
-    public var key: String { "\(kind.rawValue):\(id)" }
+    public var key: String { "\(isDemo ? "demo:" : "")\(kind.rawValue):\(id)" }
     public var year: String { String(releaseDate.prefix(4)) }
     public init(id: Int, kind: MediaKind, title: String, originalTitle: String = "", overview: String = "", releaseDate: String = "", originalLanguage: String = "en", countries: [String] = [], genres: [String] = [], genreIDs: [Int] = [], rating: Double = 0, votes: Int = 0, popularity: Double = 0, runtime: Int? = nil, certification: String? = nil, adult: Bool = false, posterPath: String? = nil, revenue: Int? = nil, status: String = "", cast: [Person] = [], crew: [Person] = [], trailers: [Trailer] = [], seasons: [Season] = [], isDemo: Bool = false) {
         self.id = id; self.kind = kind; self.title = title; self.originalTitle = originalTitle
@@ -87,11 +87,12 @@ public struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     }
 }
 public enum SortOrder: String, Codable, CaseIterable, Sendable {
-    case popular = "Popular", rating = "Audience rating", quality = "Rating confidence", newest = "Newest", revenue = "Movie revenue"
+    case popular = "Popular", rating = "Audience rating", quality = "Rating confidence", votes = "Vote count", newest = "Newest", revenue = "Movie revenue"
     public var apiValue: String {
         switch self {
         case .popular: "popularity.desc"
         case .rating, .quality: "vote_average.desc"
+        case .votes: "vote_count.desc"
         case .newest: "primary_release_date.desc"
         case .revenue: "revenue.desc"
         }
@@ -130,6 +131,19 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
     public var includeUnknown = false
     public var releaseWindow = "Last 30 days"
     public init() {}
+    public var dateValidationMessage: String? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy-MM-dd"; formatter.isLenient = false
+        for value in [fromDate, toDate] where !value.isEmpty {
+            guard value.count == 10, let date = formatter.date(from: value), formatter.string(from: date) == value else {
+                return "Enter valid dates as YYYY-MM-DD, or leave them blank."
+            }
+        }
+        if !fromDate.isEmpty && !toDate.isEmpty && fromDate > toDate { return "The start date must come before the end date." }
+        return nil
+    }
     public static let regions: [String: [String]] = [
         "Worldwide": [], "Arab World": ["EG","SA","AE","MA","DZ","TN","JO","LB","IQ","QA","KW","BH","OM","PS","SY","YE","LY","SD"],
         "India": ["IN"], "East Asia": ["JP","KR","CN","TW","HK"], "South & Southeast Asia": ["IN","PK","BD","LK","TH","VN","ID","MY","PH","SG","NP"],
@@ -138,7 +152,7 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
     ]
     public func allows(_ item: MediaItem) -> Bool {
         guard !item.adult, media.kinds.contains(item.kind) else { return false }
-        if item.kind == .tv && sort == .revenue { return false }
+        if sort == .revenue && (item.kind == .tv || item.revenue == nil) { return false }
         let certificate = item.certification?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if ["NC-17","TV-MA"].contains(certificate) { return false }
         if item.kind == .movie && certificate == "R" && !includeRestricted { return false }
@@ -197,6 +211,15 @@ public struct UserLibrary: Codable, Sendable {
             items.removeValue(forKey: key); updated.removeValue(forKey: key)
         }
     }
+    public mutating func normalizeKeys() {
+        for oldKey in Array(items.keys) {
+            guard let item = items[oldKey], oldKey != item.key else { continue }
+            items[item.key] = item; items.removeValue(forKey: oldKey)
+            flags[item.key, default: []].formUnion(flags.removeValue(forKey: oldKey) ?? [])
+            if let value = ratings.removeValue(forKey: oldKey) { ratings[item.key] = value }
+            updated[item.key] = updated.removeValue(forKey: oldKey) ?? Date()
+        }
+    }
 }
 public struct Recommendation: Sendable {
     public let item: MediaItem
@@ -228,6 +251,7 @@ public enum Ranking {
             case .popular: x = a.popularity; y = b.popularity
             case .rating: x = a.rating; y = b.rating
             case .quality: x = quality(rating: a.rating, votes: a.votes); y = quality(rating: b.rating, votes: b.votes)
+            case .votes: x = Double(a.votes); y = Double(b.votes)
             case .revenue: x = Double(a.revenue ?? 0); y = Double(b.revenue ?? 0)
             case .newest: return a.releaseDate == b.releaseDate ? a.key < b.key : a.releaseDate > b.releaseDate
             }

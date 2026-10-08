@@ -91,3 +91,18 @@ import Testing
     #expect(!Freshness.isDue(lastUpdate: now.addingTimeInterval(-899), now: now))
     #expect(Freshness.isDue(lastUpdate: now.addingTimeInterval(-900), now: now))
 }
+
+@Test func demoLibraryIdentityCannotOverlapLiveProviderIdentity() {
+    var live = DemoCatalog.items[0]; live.isDemo = false
+    #expect(live.key != DemoCatalog.items[0].key)
+}
+
+@Test func impossibleDatesAreRejectedBeforeNetworkRequests() {
+    var filter = CatalogFilter()
+    filter.fromDate = "2025-02-30"
+    #expect(filter.dateValidationMessage != nil)
+    filter.fromDate = "2025-03-01"; filter.toDate = "2025-02-01"
+    #expect(filter.dateValidationMessage != nil)
+    filter.fromDate = "2024-02-29"; filter.toDate = "2025-02-28"
+    #expect(filter.dateValidationMessage == nil)
+}
