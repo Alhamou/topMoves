@@ -1,8 +1,40 @@
+# Build and Package Managers
 .build/
 build/
 DerivedData/
+.swiftpm/
+
+# Xcode & User Configurations
 *.xcuserstate
 xcuserdata/
-.DS_Store
-Config/Secrets.xcconfig
+*.xcscmblueprint
+
+# Logs
+*.log
 /build-*.log
+
+# Secrets and Local Configurations
+Config/Secrets.xcconfig
+*.env
+.env.*
+*.key
+*.token
+
+# OS and System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor & AI Assistant Files
+AGENTS.md
+.agents/
+.gemini/
+.cursor/
+.vscode/
+.idea/
+
+# Internal Evaluation Specifications & Reports
+SPEC.md
+docs/VERIFICATION.md

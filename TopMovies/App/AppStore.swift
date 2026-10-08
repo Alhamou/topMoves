@@ -22,12 +22,25 @@ final class AppStore {
     var tokenPresent = false
     var preference = "All genres"
     var librarySaveError: String?
+    var isSparse = false
+    var sparseNotice: String?
     private var client: TMDBClient?
     private var requestTask: Task<Void, Never>?
     private var generation = UUID()
     private let directory: URL
     private let defaults: UserDefaults
     private var lastAttempt: Date?
+
+    nonisolated static func acceptsItem(_ item: MediaItem, filters: CatalogFilter, feed: Feed, library: UserLibrary) -> Bool {
+        guard filters.allows(item) else { return false }
+        if let flag = feed.flag { return library.contains(flag, key: item.key) }
+        if library.contains(.notInterested, key: item.key) { return false }
+        if [.recommendations, .tonight, .gems].contains(feed) {
+            if library.contains(.watched, key: item.key) { return false }
+            if feed == .gems && (item.votes < 100 || item.votes > 3000 || item.rating < 7) { return false }
+        }
+        return true
+    }
 
     var isDemo: Bool { !tokenPresent }
     var effectiveFilters: CatalogFilter {
@@ -69,7 +82,13 @@ final class AppStore {
     }
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        filters = defaults.data(forKey: "catalogFilters").flatMap { try? JSONDecoder().decode(CatalogFilter.self, from: $0) } ?? CatalogFilter()
+        var initialFilters = defaults.data(forKey: "catalogFilters").flatMap { try? JSONDecoder().decode(CatalogFilter.self, from: $0) } ?? CatalogFilter()
+        if !defaults.bool(forKey: "hasMigratedRDefaultV2") {
+            initialFilters.includeRestricted = true
+            defaults.set(true, forKey: "hasMigratedRDefaultV2")
+            if let data = try? JSONEncoder().encode(initialFilters) { defaults.set(data, forKey: "catalogFilters") }
+        }
+        filters = initialFilters
         preference = defaults.string(forKey: "preferredGenre") ?? "All genres"
         directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("TopMovies", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -123,8 +142,17 @@ final class AppStore {
         let snapshotFile = snapshotURL
         if !more {
             page = 1; hasMore = false; lastUpdated = nil; showingCached = false
+            isSparse = false; sparseNotice = nil
             items = feed.isLibrary ? Array(library.items.values) : []
-            if isDemo { items = DemoCatalog.items; hasMore = false; isLoading = false; return }
+            if isDemo {
+                items = DemoCatalog.items; hasMore = false; isLoading = false
+                let matches = visibleItems.count
+                if matches <= 2 {
+                    isSparse = true
+                    sparseNotice = "Only \(matches) demo titles matched your current filters."
+                }
+                return
+            }
             if !feed.isLibrary, let data = try? Data(contentsOf: snapshotFile), let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data), Date().timeIntervalSince(snapshot.updated) < 604800 {
                 items = snapshot.items; lastUpdated = snapshot.updated; showingCached = true
                 hasMore = snapshot.hasMore; page = snapshot.page
@@ -145,17 +173,49 @@ final class AppStore {
                     catch ProviderError.status(404) { continue }
                 }
                 values = refreshed; moreAvailable = false; fetchedAt = Date()
+                items = values; hasMore = false; page = 1
+                lastUpdated = fetchedAt; showingCached = false
             } else {
-                let result = try await client.catalog(filters: effectiveFilters, feed: feed, page: requestPage, force: force)
-                values = result.items; moreAvailable = result.hasMore; fetchedAt = result.updated
+                let targetMatches = 20
+                let maxScanPages = 2
+                let currentFilters = effectiveFilters
+                let currentFeed = feed
+                let currentLibrary = library
+                let pagingResult = try await ProgressivePaging.fill(
+                    initial: more ? items : [],
+                    startPage: requestPage,
+                    targetNewMatches: targetMatches,
+                    maxPages: maxScanPages,
+                    accepts: { item in
+                        Self.acceptsItem(item, filters: currentFilters, feed: currentFeed, library: currentLibrary)
+                    },
+                    fetch: { page in
+                        try await client.catalog(filters: currentFilters, feed: currentFeed, page: page, force: force)
+                    }
+                )
+                try Task.checkCancellation()
+                guard id == generation else { return }
+                values = pagingResult.items
+                moreAvailable = pagingResult.hasMore
+                fetchedAt = pagingResult.updated
+                items = values; hasMore = moreAvailable; page = pagingResult.page
+                lastUpdated = fetchedAt; showingCached = false
+
+                let matches = visibleItems.count
+                if pagingResult.isSparse || (matches <= 4 && hasMore) {
+                    isSparse = true
+                    if matches == 0 {
+                        sparseNotice = "Filtered out titles across \(page) pages under conservative US ratings. Tap 'Load more' to scan further or broaden filters."
+                    } else {
+                        sparseNotice = "Only \(matches) titles matched conservative content filters across \(page) pages. Tap 'Load more' to scan further or broaden filters."
+                    }
+                } else {
+                    isSparse = false
+                    sparseNotice = nil
+                }
             }
             try Task.checkCancellation()
             guard id == generation else { return }
-            var merged = more ? items : []
-            var seen = Set(merged.map(\.key))
-            for item in values where seen.insert(item.key).inserted { merged.append(item) }
-            items = merged; hasMore = moreAvailable; page = requestPage
-            lastUpdated = fetchedAt; showingCached = false
             for item in values where library.items[item.key] != nil || library.flags[item.key] != nil {
                 library.items[item.key] = item; library.updated[item.key] = Date()
             }

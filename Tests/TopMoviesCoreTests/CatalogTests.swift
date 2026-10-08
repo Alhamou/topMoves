@@ -17,6 +17,8 @@ import Testing
     item.certification = "PG-13"
     #expect(filters.allows(item))
     item.certification = "R"
+    #expect(filters.allows(item))
+    filters.includeRestricted = false
     #expect(!filters.allows(item))
     filters.includeRestricted = true
     #expect(filters.allows(item))
@@ -106,3 +108,46 @@ import Testing
     filter.fromDate = "2024-02-29"; filter.toDate = "2025-02-28"
     #expect(filter.dateValidationMessage == nil)
 }
+
+@Test func ageRatingParsingAndMinimumAgeFiltering() {
+    #expect(AgeRating.age(for: "G", kind: .movie) == 0)
+    #expect(AgeRating.age(for: "PG", kind: .movie) == 7)
+    #expect(AgeRating.age(for: "PG-13", kind: .movie) == 13)
+    #expect(AgeRating.age(for: "TV-14", kind: .tv) == 14)
+    #expect(AgeRating.age(for: "16", kind: .movie) == 16)
+    #expect(AgeRating.age(for: "FSK 16", kind: .movie) == 16)
+    #expect(AgeRating.age(for: "R", kind: .movie) == 18)
+    #expect(AgeRating.age(for: "NC-17", kind: .movie) == 18)
+    #expect(AgeRating.age(for: "TV-MA", kind: .tv) == 18)
+
+    var filters = CatalogFilter()
+    let movieG = MediaItem(id: 1, kind: .movie, title: "Family Film", certification: "G")
+    let moviePG13 = MediaItem(id: 2, kind: .movie, title: "Action Teen", certification: "PG-13")
+    let movie16 = MediaItem(id: 3, kind: .movie, title: "European Thriller", certification: "16")
+    let movieR = MediaItem(id: 4, kind: .movie, title: "Mature Horror", certification: "R")
+    let tvMA = MediaItem(id: 5, kind: .tv, title: "Dark Series", certification: "TV-MA")
+
+    // Age 13+
+    filters.minimumAge = .age13
+    #expect(!filters.allows(movieG))
+    #expect(filters.allows(moviePG13))
+    #expect(filters.allows(movie16))
+    #expect(filters.allows(movieR))
+
+    // Age 16+
+    filters.minimumAge = .age16
+    #expect(!filters.allows(movieG))
+    #expect(!filters.allows(moviePG13))
+    #expect(filters.allows(movie16))
+    #expect(filters.allows(movieR))
+    #expect(filters.allows(tvMA))
+
+    // Age 18+
+    filters.minimumAge = .age18
+    #expect(!filters.allows(movieG))
+    #expect(!filters.allows(moviePG13))
+    #expect(!filters.allows(movie16))
+    #expect(filters.allows(movieR))
+    #expect(filters.allows(tvMA))
+}
+

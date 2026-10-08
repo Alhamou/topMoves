@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test Core & CLI
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Show Swift & Xcode Version
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Run Swift Package Tests
+        run: swift test --parallel
+
+  build-mac:
+    name: Build macOS App
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build macOS App (Release)
+        run: |
+          xcodebuild -project TopMovies.xcodeproj \
+                     -scheme TopMovies \
+                     -configuration Release \
+                     -destination 'platform=macOS' \
+                     -derivedDataPath build/mac \
+                     CODE_SIGNING_ALLOWED=NO \
+                     build

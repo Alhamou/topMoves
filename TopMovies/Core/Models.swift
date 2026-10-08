@@ -114,6 +114,54 @@ public enum Feed: String, Codable, CaseIterable, Sendable {
         }
     }
 }
+public enum AgeRating: String, Codable, CaseIterable, Sendable {
+    case any = "Any"
+    case age13 = "13+"
+    case age16 = "16+"
+    case age18 = "18+"
+
+    public var minAge: Int {
+        switch self {
+        case .any: return 0
+        case .age13: return 13
+        case .age16: return 16
+        case .age18: return 18
+        }
+    }
+
+    public var title: String {
+        switch self {
+        case .any: return "Any age rating"
+        case .age13: return "13+ (Teens & up)"
+        case .age16: return "16+ (Mature & up)"
+        case .age18: return "18+ (Adults only)"
+        }
+    }
+
+    public static func age(for certification: String?, kind: MediaKind) -> Int? {
+        guard let raw = certification?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return nil
+        }
+        let cert = raw.uppercased()
+        switch cert {
+        case "G", "TV-G", "TV-Y", "U", "ALL":
+            return 0
+        case "TV-Y7", "TV-Y7-FV", "PG", "TV-PG":
+            return 7
+        case "PG-13":
+            return 13
+        case "TV-14":
+            return 14
+        case "NC-17", "R", "TV-MA":
+            return 18
+        default:
+            if let num = Int(cert.filter(\.isNumber)), num > 0 {
+                return num
+            }
+            return nil
+        }
+    }
+}
 public struct CatalogFilter: Codable, Equatable, Sendable {
     public var media: MediaSelection = .all
     public var genre = "All genres"
@@ -127,10 +175,30 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
     public var minimumVotes: Int = 0
     public var maximumRuntime: Int = 0
     public var sort: SortOrder = .popular
-    public var includeRestricted = false
+    public var includeRestricted = true
     public var includeUnknown = false
     public var releaseWindow = "Last 30 days"
+    public var minimumAge: AgeRating = .any
     public init() {}
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        media = try container.decodeIfPresent(MediaSelection.self, forKey: .media) ?? .all
+        genre = try container.decodeIfPresent(String.self, forKey: .genre) ?? "All genres"
+        language = try container.decodeIfPresent(String.self, forKey: .language) ?? ""
+        country = try container.decodeIfPresent(String.self, forKey: .country) ?? ""
+        region = try container.decodeIfPresent(String.self, forKey: .region) ?? "Worldwide"
+        fromDate = try container.decodeIfPresent(String.self, forKey: .fromDate) ?? ""
+        toDate = try container.decodeIfPresent(String.self, forKey: .toDate) ?? ""
+        query = try container.decodeIfPresent(String.self, forKey: .query) ?? ""
+        minimumRating = try container.decodeIfPresent(Double.self, forKey: .minimumRating) ?? 0
+        minimumVotes = try container.decodeIfPresent(Int.self, forKey: .minimumVotes) ?? 0
+        maximumRuntime = try container.decodeIfPresent(Int.self, forKey: .maximumRuntime) ?? 0
+        sort = try container.decodeIfPresent(SortOrder.self, forKey: .sort) ?? .popular
+        includeRestricted = try container.decodeIfPresent(Bool.self, forKey: .includeRestricted) ?? true
+        includeUnknown = try container.decodeIfPresent(Bool.self, forKey: .includeUnknown) ?? false
+        releaseWindow = try container.decodeIfPresent(String.self, forKey: .releaseWindow) ?? "Last 30 days"
+        minimumAge = try container.decodeIfPresent(AgeRating.self, forKey: .minimumAge) ?? .any
+    }
     public var dateValidationMessage: String? {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -154,10 +222,18 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
         guard !item.adult, media.kinds.contains(item.kind) else { return false }
         if sort == .revenue && (item.kind == .tv || item.revenue == nil) { return false }
         let certificate = item.certification?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if ["NC-17","TV-MA"].contains(certificate) { return false }
-        if item.kind == .movie && certificate == "R" && !includeRestricted { return false }
+        if ["NC-17","TV-MA"].contains(certificate) && minimumAge != .age18 && minimumAge != .age16 { return false }
+        if item.kind == .movie && certificate == "R" && !includeRestricted && minimumAge != .age18 && minimumAge != .age16 { return false }
         let known = item.kind == .movie ? ["G","PG","PG-13","R"] : ["TV-Y","TV-Y7","TV-Y7-FV","TV-G","TV-PG","TV-14"]
-        if !known.contains(certificate) && !includeUnknown { return false }
+        if query.isEmpty && !known.contains(certificate) && !includeUnknown && minimumAge == .any { return false }
+        if minimumAge != .any {
+            let itemAge = AgeRating.age(for: item.certification, kind: item.kind)
+            if let age = itemAge {
+                if age < minimumAge.minAge { return false }
+            } else if !includeUnknown {
+                return false
+            }
+        }
         if genre != "All genres" && !item.genres.contains(genre) { return false }
         if !language.isEmpty && item.originalLanguage != language { return false }
         if !country.isEmpty && !item.countries.contains(country) { return false }

@@ -232,6 +232,32 @@ public actor TMDBClient {
                 if !dates.0.isEmpty { query.append(URLQueryItem(name: "\(prefix).gte", value: dates.0)) }
                 if !dates.1.isEmpty { query.append(URLQueryItem(name: "\(prefix).lte", value: dates.1)) }
                 if filters.maximumRuntime > 0 { query.append(URLQueryItem(name: "with_runtime.lte", value: String(filters.maximumRuntime))) }
+                if !filters.includeUnknown {
+                    query.append(URLQueryItem(name: "certification_country", value: "US"))
+                    if kind == .movie {
+                        let certs: String
+                        switch filters.minimumAge {
+                        case .any:
+                            certs = filters.includeRestricted ? "G|PG|PG-13|R" : "G|PG|PG-13"
+                        case .age13:
+                            certs = filters.includeRestricted ? "PG-13|R" : "PG-13"
+                        case .age16, .age18:
+                            certs = "R|NC-17"
+                        }
+                        query.append(URLQueryItem(name: "certification", value: certs))
+                    } else {
+                        let certs: String
+                        switch filters.minimumAge {
+                        case .any:
+                            certs = "TV-Y|TV-Y7|TV-G|TV-PG|TV-14"
+                        case .age13:
+                            certs = "TV-14"
+                        case .age16, .age18:
+                            certs = "TV-MA"
+                        }
+                        query.append(URLQueryItem(name: "certification", value: certs))
+                    }
+                }
             }
             let data = try await request(path, query: query, ttl: force ? 0 : Freshness.interval)
             updated = min(updated, cacheTimestamp(path, query: query))

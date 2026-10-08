@@ -85,8 +85,10 @@ struct RootView: View {
             }.padding(10).background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 8))
             .frame(maxWidth: 420)
             Spacer(minLength: 0)
-            Button { store.showFilters.toggle() } label: { Label("Filters", systemImage: "slider.horizontal.3") }
-                .buttonStyle(.bordered).tint(store.showFilters ? Theme.accent : .gray)
+            Button { store.showFilters.toggle() } label: {
+                Label(store.filters.minimumAge != .any ? "Filters (\(store.filters.minimumAge.rawValue))" : "Filters", systemImage: "slider.horizontal.3")
+            }
+            .buttonStyle(.bordered).tint(store.showFilters || store.filters != CatalogFilter() ? Theme.accent : .gray)
             Button { store.refresh(force: true) } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.borderless).disabled(store.isLoading).help("Refresh catalog (⌘R)")
         }.padding(.horizontal, 24).padding(.vertical, 14)
@@ -139,6 +141,19 @@ struct RootView: View {
                     }.padding(16).background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
                 }
                 if let error = store.librarySaveError { Text(error).foregroundStyle(Theme.accent).font(.callout) }
+                if let notice = store.sparseNotice, !store.isLoading {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "line.3.horizontal.decrease.circle").foregroundStyle(Theme.accent)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Sparse Results").font(.callout.weight(.medium))
+                            Text(notice).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if store.hasMore {
+                            Button("Scan further") { store.loadMore() }.buttonStyle(.bordered).controlSize(.small)
+                        }
+                    }.padding(12).background(Theme.surface, in: RoundedRectangle(cornerRadius: 8))
+                }
                 if store.isLoading && store.items.isEmpty {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 155, maximum: 210), spacing: 20)], spacing: 24) {
                         ForEach(0..<8) { _ in
@@ -149,25 +164,56 @@ struct RootView: View {
                     ContentUnavailableView {
                         Label(store.feed.isLibrary ? "No matching saved titles" : "No matching titles", systemImage: "film")
                     } description: {
-                        Text(store.isLoading ? "Checking classifications…" : "Try broader filters. Unknown US ratings and mature content are hidden by default.\(store.hasMore ? " More candidates are available on the next page." : "")")
-                    } actions: { Button("Reset Filters") { store.filters = CatalogFilter() } }
+                        Text(store.isLoading ? "Checking classifications…" : (store.sparseNotice ?? "Try broader filters. Unknown US ratings and mature content are hidden by default.\(store.hasMore ? " More candidates are available on the next page." : "")"))
+                    } actions: {
+                        HStack(spacing: 12) {
+                            Button("Reset Filters") { store.filters = CatalogFilter() }
+                            if store.hasMore && !store.isLoading {
+                                Button("Scan Next Pages") { store.loadMore() }.buttonStyle(.borderedProminent)
+                            }
+                        }
+                    }
                     .frame(minHeight: 230)
                 } else {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 155, maximum: 220), spacing: 20)], alignment: .leading, spacing: 28) {
                         ForEach(store.visibleItems, id: \.key) { item in
                             PosterCard(store: store, item: item)
+                                .onAppear {
+                                    triggerScrollLoadMoreIfNeeded(for: item)
+                                }
                         }
                     }
                 }
                 if store.hasMore {
-                    HStack { Spacer(); Button { store.loadMore() } label: {
-                        HStack { if store.isLoading { ProgressView().controlSize(.small) }; Text(store.isLoading ? "Loading…" : "Load more posters") }
-                    }.buttonStyle(.bordered).disabled(store.isLoading); Spacer() }.padding(.vertical, 12)
+                    HStack {
+                        Spacer()
+                        Button { store.loadMore() } label: {
+                            HStack {
+                                if store.isLoading { ProgressView().controlSize(.small) }
+                                Text(store.isLoading ? "Loading…" : "Load more posters")
+                            }
+                        }.buttonStyle(.bordered).disabled(store.isLoading)
+                        Spacer()
+                    }
+                    .padding(.vertical, 12)
+                    .onAppear {
+                        if store.visibleItems.count >= 6 && !store.isLoading && store.hasMore {
+                            store.loadMore()
+                        }
+                    }
                 }
                 if !store.isDemo { SourceFooter() }
                 Text("Conservative US content filter · No claim of complete content advisories or worldwide exhibition-ban coverage.")
                     .font(.caption2).foregroundStyle(.secondary).padding(.top, 4)
             }.padding(24)
+        }
+    }
+    private func triggerScrollLoadMoreIfNeeded(for item: MediaItem) {
+        guard !store.isLoading, store.hasMore else { return }
+        let items = store.visibleItems
+        guard items.count >= 6 else { return }
+        if let idx = items.firstIndex(where: { $0.key == item.key }), idx >= items.count - 4 {
+            store.loadMore()
         }
     }
     private var controls: some View {

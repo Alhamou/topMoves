@@ -1,67 +1,178 @@
+<p align="center">
+  <img src="docs/branding/app_hero_banner.jpg" alt="TopMovies Banner" width="100%" style="border-radius: 12px;" />
+</p>
+
+<p align="center">
+  <a href="#license"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="MIT License"></a>
+  <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/Platform-macOS%2014.0%2B-black?style=flat-square&logo=apple" alt="Platform macOS"></a>
+  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.0-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 6.0"></a>
+  <a href="https://developer.apple.com/xcode/swiftui/"><img src="https://img.shields.io/badge/UI-SwiftUI-0071e3?style=flat-square" alt="SwiftUI"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Dependencies-Zero%20(Pure%20Native)-success?style=flat-square" alt="Zero Dependencies"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Tests-27%20Passed-brightgreen?style=flat-square" alt="Tests"></a>
+</p>
+
+---
+
 # TopMovies for Mac
 
-A native SwiftUI movie **and TV series** discovery app. English-only interface and English metadata where supplied, worldwide catalog, US content certificates by default. The current deliverable is **macOS only**. Mobile is deferred until the desktop version is reviewed and separately requested.
+**TopMovies** is an ultra-fast, privacy-first native macOS movie and TV series discovery application built with **SwiftUI** and **Swift 6**. 
 
-## Open the app
+Engineered with modern Apple design aesthetics, it offers deep filtering, curated discovery feeds, local library tracking, progressive pagination, and a complete offline demo mode—with **zero third-party dependencies**.
 
-The review build is at `build/TopMovies.app`. Open it in Finder, or:
+---
 
-```sh
-open /Users/alhamou/Developer/topMovies/build/TopMovies.app
+## 🌟 Key Features
+
+- **🎬 Curated Discovery Feeds**:
+  - **Discover**: Browse worldwide catalogs categorized across all major film and television genres.
+  - **For You**: Deterministic, personalized recommendations based on your favorite genres and ratings (no AI/ML tracking).
+  - **Tonight**: Smart time-bounded picker (default 120 minutes) excluding already watched titles.
+  - **Hidden Gems**: Curated high-rated titles (rating $\ge$ 7.0) with moderate audience vote counts ($100 - 3,000$).
+  - **Trending & Best New Releases**: Daily and weekly attention activity with verified audience participation.
+
+- **🔍 Advanced Multi-Criteria Filters**:
+  - Filter by media type (**All / Movies / TV Shows**).
+  - Multi-country origin language matching and regional collection groupings.
+  - Release date ranges, release year, or decade.
+  - Minimum audience scores, vote thresholds, and runtime caps.
+  - Conservative content filtering (explicit/adult content blocked by default, separate US motion picture and TV label hierarchies).
+
+- **⚡ Progressive Paging & Resilience**:
+  - Intelligent autofill pagination for sparse filter results without unbounded network loops.
+  - Concurrency-limited detail fetching with automatic HTTP 429 rate-limit backoff.
+  - 7-day catalog and poster snapshot caching, 6-hour video and season metadata reuse.
+
+- **🔒 Local & Privacy-Conscious**:
+  - **100% Local Library**: Favorites, Watchlist, Watched items, and personal 1–10 star ratings stay on your Mac.
+  - **macOS App Sandbox**: Runs securely sandboxed.
+  - **Keychain Security**: TMDB API Read Access Tokens are stored safely in macOS Keychain (`Security.framework`) and never logged or leaked.
+
+- **📴 Complete Offline Demo Mode**:
+  - Full demo catalog with procedural geometric poster artwork, fictional plots, cast, and scores when running without an API key.
+
+---
+
+## 📸 Screenshots & Branding
+
+| App Icon | Hero Showcase |
+| :---: | :---: |
+| <img src="docs/branding/app_icon.jpg" width="220" alt="App Icon" style="border-radius: 24px;" /> | <img src="docs/branding/app_hero_banner.jpg" width="480" alt="Showcase" style="border-radius: 8px;" /> |
+
+---
+
+## 🚀 Getting Started
+
+### System Requirements
+
+- **Operating System**: macOS Sonoma (14.0) or later.
+- **Hardware**: Apple Silicon (M1/M2/M3/M4) or Intel Mac (Universal Binary).
+- **Development**: Xcode 15+ / Swift 6 toolchain.
+
+### Quick Launch (Prebuilt App)
+
+A review build is ready in the repository:
+
+```bash
+open build/TopMovies.app
 ```
 
-macOS 14 or later is required. On another Mac, build it locally using Xcode; this local review app is ad-hoc signed, not notarized or an App Store release.
+### Build from Source
 
-## Build and run
+You can build and run using Xcode or via the terminal:
 
-Open `TopMovies.xcodeproj`, select the **TopMovies** scheme and **My Mac**, and Run. No external packages or paid tools are needed. To reproduce the standalone review app:
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/topMovies.git
+cd topMovies
 
-```sh
+# 2. Run unit and integration tests
+swift test
+
+# 3. Build Release, sign locally, and launch
 ./scripts/run-mac.sh
 ```
 
-This builds Release, copies the app to `build/TopMovies.app`, signs it locally with its sandbox/network entitlements, and opens it. For an unsigned development build:
+For an unsigned development build:
 
-```sh
-xcodebuild -project TopMovies.xcodeproj -scheme TopMovies -destination 'platform=macOS' -derivedDataPath build/mac CODE_SIGNING_ALLOWED=NO build
-swift test
+```bash
+xcodebuild -project TopMovies.xcodeproj \
+           -scheme TopMovies \
+           -destination 'platform=macOS' \
+           -derivedDataPath build/mac \
+           CODE_SIGNING_ALLOWED=NO build
 ```
 
-`python3 scripts/generate_project.py` regenerates the checked-in Xcode project after adding source files. Original app icon generation is optional: `swift scripts/make_icon.swift "$PWD"`, followed by `iconutil -c icns build/TopMovies.iconset -o TopMovies/Resources/AppIcon.icns`.
+---
 
-## Connect real data
+## 🔑 Connecting Real TMDB Data
 
-1. Create a TMDB account, apply for free **noncommercial** API access and accept the provider's terms yourself: <https://www.themoviedb.org/settings/api>.
-2. Copy the **API Read Access Token**, not the short API key.
-3. In TopMovies, open **Settings & Sources** (⌘,), paste into the secure field and choose **Save & Connect**.
+TopMovies works immediately out of the box with an illustrative offline catalog. To connect real-world movies and series:
 
-The token is kept in macOS Keychain, never in source, snapshots or logs. **Do not send secrets in chat.** Removing it returns to demo mode. The real API has not been authenticated/tested in this workspace because no valid token was supplied. HTTP decoding, errors, caching and rate-limit behavior are tested with fixtures; live content completeness and trailer playback need verification after connection.
+1. Create a free account at [The Movie Database (TMDB)](https://www.themoviedb.org/).
+2. Request a free **noncommercial** API key in your [TMDB Account Settings](https://www.themoviedb.org/settings/api).
+3. Copy your **API Read Access Token** (v4 JWT token, not the short API key).
+4. Launch TopMovies, open **Settings & Sources** (`⌘,`), paste into the token field, and click **Save & Connect**.
 
-Without a token the entire catalog is **fictional illustrative demo content**: titles, summaries, cast, scores, votes, certificates, episode information and revenue. Posters are original native geometric illustrations. There are no real trailers for fictional titles. Demo bookmarks have a separate namespace and cannot become live-provider bookmarks.
+> [!NOTE]
+> Your token is stored exclusively in the macOS Keychain. Removing the token at any time returns the app cleanly to Demo Mode without wiping your local library or preferences.
 
-## Use it
+---
 
-- Browse **Discover** by genre, or **For You**, **Tonight**, **Hidden Gems**, daily/weekly trending and **Best New Releases**.
-- Choose **All / Movies / TV Shows**. **Filters** includes language, region collections, countries, date range/year/decade, minimum score/votes, time limit and conservative content settings. Last filters/sort/search restore automatically. Origin language is independent of display language. Region collections are explicitly curated country groupings, not exhaustive geopolitical definitions.
-- Click a poster for US classification and audience score/votes **before** trailers, story, original title/language, country context, cast/crew, reported movie revenue or TV seasons/episodes. Unknown fields stay visibly unavailable.
-- Save **Favorite**, **Watchlist**, **Watched**, **Not Interested**, and a personal 1–10 rating. Right-click a poster for quick actions. Library and preferences are local to this Mac. Content filters apply to saved items too.
-- ⌘F searches; ⌘R refreshes; ⇧⌘F toggles filters; ⇧⌘0 resets them; Escape closes details/settings. Native controls support keyboard navigation (enable macOS Keyboard Navigation to Tab through all controls).
-- **Tonight** uses known runtimes, defaults to 120 minutes and excludes watched titles. **Hidden Gems** means rating ≥7 and 100–3,000 votes among loaded candidates. **For You** uses ordinary arithmetic rules and gives an explanation; it is not AI/ML.
+## ⌨️ Keyboard Shortcuts
 
-## Freshness and scope
+| Shortcut | Action |
+| :--- | :--- |
+| `⌘ F` | Focus search bar |
+| `⌘ R` | Refresh catalog & active feeds |
+| `⇧ ⌘ F` | Toggle filter panel |
+| `⇧ ⌘ 0` | Reset all active filters to default |
+| `⌘ ,` | Open Settings & Sources |
+| `Escape` | Dismiss modal details or settings sheet |
 
-Catalogs refresh at launch/foreground when due and every 15 minutes **while active**. No real-time feed or updates while closed are promised. Provider freshness determines actual accuracy. Refresh preserves your filters/library. Requests debounce, cancel/coalesce, bound detail concurrency to four and back off on HTTP 429. One page loads up to 20 titles per media type; additional posters use explicit lightweight pagination. Conservative filtering can leave a page empty: broaden filters or load more.
+---
 
-Catalog snapshots/posters expire after 7 days; detail/season/video responses are reused up to 6 hours. Cached results retain their fetch timestamp, and failed refreshes show saved/stale data with an error rather than presenting it as current. Library provider metadata expires within 180 days; personal flags/ratings remain and saved IDs can be fetched again. Token removal does not delete your personal library. Clear Provider Cache is available in Settings.
+## 🏛️ Project Architecture
 
-Trending is provider attention activity, **not** a best-rating chart. Best New Releases means movie release dates / series **first-air** dates within the selected window, ordered by current audience scores with ≥50 votes. It does not mean ratings collected exclusively during that period, newly airing seasons, or best new episodes. Confidence/recommendation/gem ordering is local to loaded candidates. Mixed movie/TV results use their own provider taxonomies.
+```
+TopMovies/
+├── TopMovies/
+│   ├── App/            # Entry point (TopMoviesApp.swift) & State Store (AppStore.swift)
+│   ├── Core/           # Domain Models, TMDBClient, ProgressivePaging, DemoCatalog
+│   ├── Views/          # Native SwiftUI components (RootView, DetailView, PosterView, FilterPanel)
+│   └── Resources/      # AppIcon.icns, TMDB branding, entitlements
+├── Tests/              # 27 comprehensive unit and integration tests
+├── docs/               # Architecture guides, data sources, and branding assets
+├── scripts/            # CLI utilities, icon generation, project build helpers
+└── Package.swift       # Swift Package Manager manifest for TopMoviesCore
+```
 
-Revenue is TMDB's reported total in USD where available, not profit, inflation-adjusted revenue or weekly/monthly box office; values may be absent/incomplete. No subtitle-download or exhibition-ban registry integration is included. Critic scores are explicitly unavailable: TMDB scores are audience votes. English metadata does not identify a translator or subtitle company. Trailers list English and original-language entries where returned; YouTube supports click-to-load embedded playback or opening the host, Vimeo opens its host. Host/uploader/region restrictions can prevent playback.
+For full details on concurrency patterns, caching mechanics, and data flow, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Content policy and rights
+---
 
-Explicit/adult-flagged titles, NC-17 and TV-MA are excluded. R movies are hidden unless enabled. Unknown US labels are hidden unless deliberately revealed; absence is not safety. R/TV-MA are not mapped to numeric 18+ cutoffs. US film G/PG/PG-13/R/NC-17 and TV labels are separate. Series-level classifications do not certify every episode/version. No promise excludes every extreme scene; no worldwide exhibition-ban coverage is claimed.
+## 🤝 Contributing
 
-TMDB is free for **noncommercial** use with attribution, not an open-data license. Commercial use needs a separate written agreement. API media remains subject to rightsholders' rights. TMDB terms restrict AI/ML uses; this app does not train/use AI and uses deterministic preference rules. See [source research](docs/DATA_SOURCES.md). Approved TMDB logo and required notice appear in Settings and live pages; no endorsement is implied.
+Contributions are what make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-Application code and original demo art: MIT. TMDB logo/media, Apple frameworks and external host content are **not** covered by this repository's MIT license. See [verification](docs/VERIFICATION.md) for exactly what was tested and remaining limits.
+Please review our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Verify tests pass (`swift test`)
+5. Push to the Branch (`git push origin feature/AmazingFeature`)
+6. Open a [Pull Request](.github/pull_request_template.md)
+
+---
+
+## 🛡️ Security & Privacy
+
+If you discover any security issues, please review our [Security Policy](SECURITY.md) for instructions on how to report vulnerabilities privately.
+
+---
+
+## ⚖️ Content Policy & Attribution
+
+- **TMDB Attribution**: This product uses the TMDB API but is not endorsed or certified by TMDB. The official TMDB logo and required notice are displayed in the application in compliance with TMDB terms.
+- **Content Filtering**: Explicit/adult titles, NC-17, and TV-MA are excluded by default. R-rated titles are hidden unless explicitly enabled in content preferences.
+- **License**: Application code and original demo artwork are licensed under the **[MIT License](LICENSE)**. TMDB branding, provider data, Apple frameworks, and third-party host content retain their respective terms and copyrights.

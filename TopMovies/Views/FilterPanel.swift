@@ -39,6 +39,11 @@ struct FilterPanel: View {
                         Text("Any country").tag("")
                         ForEach(countries, id: \.0) { Text($0.1).tag($0.0) }
                     }
+                    Picker("Minimum age rating", selection: $store.filters.minimumAge) {
+                        ForEach(AgeRating.allCases, id: \.self) { rating in
+                            Text(rating.title).tag(rating)
+                        }
+                    }
                     Text("Regions are country collections, not languages. Country and region filters intersect.")
                         .font(.caption2).foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity)
@@ -72,11 +77,11 @@ struct FilterPanel: View {
             }
             Divider().opacity(0.4)
             HStack(spacing: 24) {
-                Label("US content policy", systemImage: "shield.lefthalf.filled").font(.caption.weight(.medium))
+                Label("Content & Age Rating", systemImage: "shield.lefthalf.filled").font(.caption.weight(.medium))
                 Toggle("Include R-rated movies", isOn: $store.filters.includeRestricted)
-                Toggle("Reveal unknown US ratings", isOn: $store.filters.includeUnknown)
+                Toggle("Reveal unknown ratings", isOn: $store.filters.includeUnknown)
             }.toggleStyle(.checkbox).font(.caption)
-            Text("Explicit titles, NC-17 and TV-MA stay excluded. R is not a numeric 18 rating. Unknown is not a safety recommendation. Series ratings may vary by episode.")
+            Text("Minimum age limits results to titles rated at or above the selected threshold (13+, 16+, or 18+). R-rated movies are included by default. Series ratings may vary by episode.")
                 .font(.caption2).foregroundStyle(.secondary)
             if store.feed == .releases { Text("Best New Releases uses its selected period instead of the date fields above.").font(.caption2).foregroundStyle(Theme.accent) }
             if let message = store.filters.dateValidationMessage { Text(message).font(.caption).foregroundStyle(Theme.accent) }
