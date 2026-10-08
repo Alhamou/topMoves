@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/branding/app_hero_banner.jpg" alt="TopMovies Banner" width="100%" style="border-radius: 12px;" />
+  <img src="docs/screenshots/app_main_ui.png" alt="TopMovies for Mac" width="100%" />
 </p>
 
 <p align="center">
@@ -52,7 +52,7 @@ Engineered with modern Apple design aesthetics, it offers deep filtering, curate
 
 ---
 
-## 📸 Screenshots & Branding
+## 🎨 Branding & Assets
 
 | App Icon | Hero Showcase |
 | :---: | :---: |
