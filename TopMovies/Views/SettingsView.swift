@@ -21,7 +21,7 @@ struct SettingsView: View {
                 }
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Settings & Sources").font(.title2.weight(.semibold))
-                    Text("TopMovies for Mac · v0.1.0").font(.caption).foregroundStyle(.secondary)
+                    Text("TopMovies for Mac · v0.1.1").font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)

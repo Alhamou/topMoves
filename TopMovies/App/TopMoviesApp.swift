@@ -3,12 +3,26 @@ import SwiftUI
 @main
 struct TopMoviesApp: App {
     @State private var store = AppStore()
+
+    init() {
+        if let logoURL = Bundle.main.url(forResource: "AppLogo", withExtension: "png"),
+           let img = NSImage(contentsOf: logoURL) {
+            NSApplication.shared.applicationIconImage = img
+        }
+    }
     var body: some Scene {
         WindowGroup {
             RootView(store: store)
                 .environment(\.locale, Locale(identifier: "en_US"))
                 .environment(\.layoutDirection, .leftToRight)
                 .preferredColorScheme(.dark)
+                .onAppear {
+                    if let logoURL = Bundle.main.url(forResource: "AppLogo", withExtension: "png"),
+                       let img = NSImage(contentsOf: logoURL) {
+                        NSApplication.shared.applicationIconImage = img
+                        NSApp.dockTile.display()
+                    }
+                }
         }
         .defaultSize(width: 1240, height: 830)
         .commands {

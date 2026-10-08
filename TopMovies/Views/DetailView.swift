@@ -138,20 +138,9 @@ struct DetailView: View {
     }
     private func peopleSection(_ title: String, people: [Person]) -> some View {
         section(title) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], alignment: .leading, spacing: 14) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 210), spacing: 16)], alignment: .leading, spacing: 16) {
                 ForEach(people, id: \.self) { person in
-                    HStack(spacing: 12) {
-                        PersonAvatarView(person: person)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(person.name).font(.callout.weight(.medium)).lineLimit(1)
-                            Text(person.role).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        }
-                    }
-                    .padding(9)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.surface.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.06), lineWidth: 1))
+                    PersonRowView(person: person)
                 }
             }
         }
@@ -204,8 +193,38 @@ struct DetailView: View {
     }
 }
 
+struct PersonRowView: View {
+    let person: Person
+    @State private var isHovered = false
+    @State private var hasRealImage = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            PersonAvatarView(person: person, isHovered: isHovered, hasRealImage: $hasRealImage)
+                .contentShape(Circle())
+                .zIndex(isHovered && hasRealImage ? 50 : 1)
+                .onHover { hovering in
+                    if hasRealImage {
+                        isHovered = hovering
+                    }
+                }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(person.name).font(.callout.weight(.medium)).lineLimit(1)
+                Text(person.role).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            .zIndex(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
+        .zIndex(isHovered && hasRealImage ? 100 : 1)
+    }
+}
+
 struct PersonAvatarView: View {
     let person: Person
+    let isHovered: Bool
+    @Binding var hasRealImage: Bool
     @State private var avatar: NSImage?
 
     private var initials: String {
@@ -237,8 +256,8 @@ struct PersonAvatarView: View {
                     .scaledToFill()
                     .frame(width: 44, height: 44)
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 1.2))
-                    .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1.5)
+                    .overlay(Circle().stroke(isHovered ? Theme.accent : .white.opacity(0.18), lineWidth: isHovered ? 2.0 : 1.2))
+                    .shadow(color: .black.opacity(isHovered ? 0.65 : 0.35), radius: isHovered ? 12 : 3, x: 0, y: isHovered ? 6 : 1.5)
             } else {
                 Circle()
                     .fill(
@@ -257,11 +276,14 @@ struct PersonAvatarView: View {
             }
         }
         .frame(width: 44, height: 44)
+        .scaleEffect(isHovered && hasRealImage ? 2.0 : 1.0)
+        .animation(.easeInOut(duration: 0.22), value: isHovered)
         .task(id: person.profilePath) {
             guard let path = person.profilePath, !path.isEmpty else { return }
             if let img = await PosterCache.shared.image(path: path, size: "w185") {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     avatar = img
+                    hasRealImage = true
                 }
             }
         }

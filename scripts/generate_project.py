@@ -27,7 +27,7 @@ sp = add("sources", isa="PBXSourcesBuildPhase", buildActionMask=2147483647, file
 rp = add("resources", isa="PBXResourcesBuildPhase", buildActionMask=2147483647, files=resource_builds, runOnlyForDeploymentPostprocessing=0)
 fp = add("frameworks", isa="PBXFrameworksBuildPhase", buildActionMask=2147483647, files=[], runOnlyForDeploymentPostprocessing=0)
 common = {"MACOSX_DEPLOYMENT_TARGET":"14.0", "SDKROOT":"macosx", "SWIFT_VERSION":"6.0", "CLANG_ENABLE_MODULES":"YES", "ENABLE_USER_SCRIPT_SANDBOXING":"YES"}
-app = {"PRODUCT_NAME":"TopMovies", "PRODUCT_BUNDLE_IDENTIFIER":"com.topmovies.mac", "GENERATE_INFOPLIST_FILE":"NO", "INFOPLIST_FILE":"TopMovies/Resources/Info.plist", "MARKETING_VERSION":"0.1.0", "CURRENT_PROJECT_VERSION":"1", "CODE_SIGN_STYLE":"Automatic", "ENABLE_APP_SANDBOX":"YES", "CODE_SIGN_ENTITLEMENTS":"TopMovies/Resources/TopMovies.entitlements", "COMBINE_HIDPI_IMAGES":"YES", "SWIFT_EMIT_LOC_STRINGS":"YES"}
+app = {"PRODUCT_NAME":"TopMovies", "PRODUCT_BUNDLE_IDENTIFIER":"com.topmovies.mac", "GENERATE_INFOPLIST_FILE":"NO", "INFOPLIST_FILE":"TopMovies/Resources/Info.plist", "MARKETING_VERSION":"0.1.1", "CURRENT_PROJECT_VERSION":"3", "CODE_SIGN_STYLE":"Automatic", "ENABLE_APP_SANDBOX":"YES", "CODE_SIGN_ENTITLEMENTS":"TopMovies/Resources/TopMovies.entitlements", "COMBINE_HIDPI_IMAGES":"YES", "SWIFT_EMIT_LOC_STRINGS":"YES"}
 def configs(name, settings):
     values=[]
     for mode in ["Debug", "Release"]:
