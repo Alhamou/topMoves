@@ -297,7 +297,7 @@ struct PosterCard: View {
                             .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6)).padding(9)
                     }
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(hovered ? Theme.accent.opacity(0.7) : (isWatched ? Color.green.opacity(0.35) : .white.opacity(0.07)), lineWidth: 1))
-            }.buttonStyle(.plain).help("View \(item.title)").accessibilityLabel("\(item.title), \(item.kind.label), audience rating \(item.rating), US \(item.certification ?? "unknown"), open details")
+            }.buttonStyle(.plain).accessibilityLabel("\(item.title), \(item.kind.label), audience rating \(item.rating), US \(item.certification ?? "unknown"), open details")
             HStack(alignment: .top, spacing: 6) {
                 Text(item.title).font(.callout.weight(.semibold)).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 7) {
