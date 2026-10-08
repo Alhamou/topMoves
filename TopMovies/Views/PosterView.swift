@@ -51,28 +51,42 @@ struct PosterView: View {
     @State private var poster: NSImage?
     @State private var finished = false
     var body: some View {
-        ZStack {
-            if item.isDemo { IllustratedPoster(item: item) }
-            else if let poster { Image(nsImage: poster).resizable().scaledToFill() }
-            else {
-                Rectangle().fill(Color(white: 0.13))
-                VStack(spacing: 12) {
-                    if item.posterPath != nil && !finished { ProgressView().controlSize(.small) }
-                    else { Image(systemName: "film").font(.system(size: 32)).foregroundStyle(.secondary) }
-                    Text(item.title).font(.headline).multilineTextAlignment(.center).padding(.horizontal)
-                    Text(finished ? "Poster unavailable" : "Loading poster").font(.caption).foregroundStyle(.secondary)
+        Color.clear
+            .aspectRatio(2 / 3, contentMode: .fit)
+            .overlay {
+                GeometryReader { geo in
+                    ZStack {
+                        if item.isDemo {
+                            IllustratedPoster(item: item)
+                        } else if let poster {
+                            Image(nsImage: poster)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
+                                .clipped()
+                        } else {
+                            Rectangle().fill(Color(white: 0.13))
+                            VStack(spacing: 12) {
+                                if item.posterPath != nil && !finished { ProgressView().controlSize(.small) }
+                                else { Image(systemName: "film").font(.system(size: 32)).foregroundStyle(.secondary) }
+                                Text(item.title).font(.headline).multilineTextAlignment(.center).padding(.horizontal)
+                                Text(finished ? "Poster unavailable" : "Loading poster").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
                 }
             }
-        }
-        .aspectRatio(2 / 3, contentMode: .fit)
-        .clipped()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(item.title) poster\(item.isDemo ? ", original illustrative artwork" : "")")
-        .task(id: item.posterPath) {
-            finished = false
-            if let path = item.posterPath, !item.isDemo { poster = await PosterCache.shared.image(path: path) }
-            finished = true
-        }
+            .clipped()
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(item.title) poster\(item.isDemo ? ", original illustrative artwork" : "")")
+            .task(id: item.posterPath) {
+                finished = false
+                if let path = item.posterPath, !item.isDemo { poster = await PosterCache.shared.image(path: path) }
+                finished = true
+            }
     }
 }
 struct IllustratedPoster: View {

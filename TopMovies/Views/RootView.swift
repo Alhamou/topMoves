@@ -343,7 +343,9 @@ struct PosterCard: View {
                 }
                 if store.library.contains(.watchlist, key: item.key) { Image(systemName: "bookmark.fill").foregroundStyle(Theme.accent) }
             }.font(.caption).foregroundStyle(.secondary)
-        }.onHover { hovered = $0 }.contextMenu {
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onHover { hovered = $0 }.contextMenu {
             Button("Show Details") { store.selected = item }
             ForEach(LibraryFlag.allCases, id: \.self) { flag in
                 Button { store.toggle(flag, item: item) } label: { Label("\(store.library.contains(flag, key: item.key) ? "Remove from" : "Add to") \(flag.rawValue)", systemImage: flag.symbol) }
