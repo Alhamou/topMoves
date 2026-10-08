@@ -6,7 +6,7 @@ import CryptoKit
 final class PosterCache {
     static let shared = PosterCache()
     private let memory = NSCache<NSString, NSImage>()
-    private var pending: [String: Task<NSImage?, Never>] = [:]
+    private var pending: [String: Task<Data?, Never>] = [:]
     private let directory: URL
     private let session: URLSession
     private init() {
@@ -27,24 +27,30 @@ final class PosterCache {
         let cacheKey = "\(size)\(path)" as NSString
         if let image = memory.object(forKey: cacheKey) { return image }
         let keyString = "\(size)\(path)"
-        if let task = pending[keyString] { return await task.value }
+        if let task = pending[keyString] {
+            if let data = await task.value {
+                return memory.object(forKey: cacheKey) ?? NSImage(data: data)
+            }
+            return nil
+        }
         let filename = SHA256.hash(data: Data(keyString.utf8)).map { String(format: "%02x", $0) }.joined()
         let file = directory.appendingPathComponent(filename)
         let session = session
-        let task = Task<NSImage?, Never> {
+        let task = Task<Data?, Never> {
             if let date = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
-               Date().timeIntervalSince(date) < 604800, let image = NSImage(contentsOf: file) { return image }
+               Date().timeIntervalSince(date) < 604800, let data = try? Data(contentsOf: file) { return data }
             guard let url = URL(string: "https://image.tmdb.org/t/p/\(size)\(path)"),
                   let (data, response) = try? await session.data(from: url),
                   let response = response as? HTTPURLResponse, response.statusCode == 200,
-                  data.count < 8 * 1024 * 1024, let image = NSImage(data: data) else { return nil }
+                  data.count < 8 * 1024 * 1024 else { return nil }
             try? data.write(to: file, options: .atomic)
-            return image
+            return data
         }
         pending[keyString] = task
-        let result = await task.value
+        let rawData = await task.value
         pending.removeValue(forKey: keyString)
-        if let result { memory.setObject(result, forKey: cacheKey, cost: 500 * 750 * 4) }
+        guard let rawData, let result = NSImage(data: rawData) else { return nil }
+        memory.setObject(result, forKey: cacheKey, cost: 500 * 750 * 4)
         return result
     }
 }
