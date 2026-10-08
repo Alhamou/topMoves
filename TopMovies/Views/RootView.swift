@@ -7,8 +7,19 @@ struct RootView: View {
     var body: some View {
         NavigationSplitView {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 10) {
-                    Image(systemName: "film.stack.fill").font(.title2).foregroundStyle(Theme.accent)
+                HStack(spacing: 12) {
+                    if let logo = Bundle.main.url(forResource: "AppLogo", withExtension: "png").flatMap({ NSImage(contentsOf: $0) })
+                        ?? Bundle.main.url(forResource: "AppIcon", withExtension: "icns").flatMap({ NSImage(contentsOf: $0) })
+                        ?? NSImage(named: "AppLogo") {
+                        Image(nsImage: logo)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 36, height: 36)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 2)
+                    } else {
+                        Image(systemName: "film.stack.fill").font(.title2).foregroundStyle(Theme.accent)
+                    }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("TopMovies").font(.system(size: 21, weight: .semibold, design: .rounded))
                         Text("STORIES WORTH YOUR TIME").font(.system(size: 8, weight: .medium)).tracking(1.3).foregroundStyle(.secondary)
@@ -256,6 +267,8 @@ struct PosterCard: View {
     @Bindable var store: AppStore
     let item: MediaItem
     @State private var hovered = false
+    private var isWatched: Bool { store.library.contains(.watched, key: item.key) }
+    private var isFavorite: Bool { store.library.contains(.favorite, key: item.key) }
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             Button { store.selected = item } label: {
@@ -265,26 +278,69 @@ struct PosterCard: View {
                         Text(item.kind.label).font(.system(size: 9, weight: .medium)).padding(.horizontal, 8).padding(.vertical, 5)
                             .background(.black.opacity(0.75), in: Capsule()).padding(9)
                     }
+                    .overlay(alignment: .topTrailing) {
+                        if isWatched {
+                            HStack(spacing: 3) {
+                                Image(systemName: "checkmark").font(.system(size: 8, weight: .bold))
+                                Text("WATCHED").font(.system(size: 8, weight: .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 7).padding(.vertical, 4)
+                            .background(Color.green.opacity(0.9), in: Capsule())
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 1)
+                            .padding(9)
+                        }
+                    }
                     .overlay(alignment: .bottomTrailing) {
                         Label(item.rating.formatted(.number.locale(Locale(identifier: "en_US")).precision(.fractionLength(1))), systemImage: "star.fill")
                             .font(.caption.weight(.semibold)).foregroundStyle(Theme.accent).padding(7)
                             .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 6)).padding(9)
                     }
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(hovered ? Theme.accent.opacity(0.7) : .white.opacity(0.07), lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(hovered ? Theme.accent.opacity(0.7) : (isWatched ? Color.green.opacity(0.35) : .white.opacity(0.07)), lineWidth: 1))
             }.buttonStyle(.plain).help("View \(item.title)").accessibilityLabel("\(item.title), \(item.kind.label), audience rating \(item.rating), US \(item.certification ?? "unknown"), open details")
-            HStack(alignment: .top, spacing: 4) {
+            HStack(alignment: .top, spacing: 6) {
                 Text(item.title).font(.callout.weight(.semibold)).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
-                Button { store.toggle(.favorite, item: item) } label: {
-                    Image(systemName: store.library.contains(.favorite, key: item.key) ? "heart.fill" : "heart")
-                        .foregroundStyle(store.library.contains(.favorite, key: item.key) ? Theme.accent : .secondary)
-                }.buttonStyle(.plain).help("Toggle favorite").accessibilityLabel("Toggle favorite for \(item.title)")
-                    .accessibilityValue(store.library.contains(.favorite, key: item.key) ? "Saved" : "Not saved")
+                HStack(spacing: 7) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            store.toggle(.watched, item: item)
+                        }
+                    } label: {
+                        Image(systemName: isWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                            .font(.system(size: 15, weight: isWatched ? .semibold : .regular))
+                            .foregroundStyle(isWatched ? Color.green : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(isWatched ? "Watched (click to remove)" : "Mark as watched")
+                    .accessibilityLabel("Toggle watched for \(item.title)")
+                    .accessibilityValue(isWatched ? "Watched" : "Not watched")
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            store.toggle(.favorite, item: item)
+                        }
+                    } label: {
+                        Image(systemName: isFavorite ? "heart.fill" : "heart")
+                            .font(.system(size: 15))
+                            .foregroundStyle(isFavorite ? Theme.accent : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Toggle favorite")
+                    .accessibilityLabel("Toggle favorite for \(item.title)")
+                    .accessibilityValue(isFavorite ? "Saved" : "Not saved")
+                }
             }
             HStack(spacing: 5) {
                 Text(item.year.isEmpty ? "Date unknown" : item.year)
                 Text("·")
                 Text(item.certification ?? "US unknown")
                 Spacer(minLength: 0)
+                if isWatched {
+                    HStack(spacing: 2) {
+                        Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                        Text("Watched").font(.caption2.weight(.medium))
+                    }.foregroundStyle(Color.green)
+                }
                 if store.library.contains(.watchlist, key: item.key) { Image(systemName: "bookmark.fill").foregroundStyle(Theme.accent) }
             }.font(.caption).foregroundStyle(.secondary)
         }.onHover { hovered = $0 }.contextMenu {

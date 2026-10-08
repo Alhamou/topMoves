@@ -12,7 +12,7 @@ def uid(name): return hashlib.sha1(name.encode()).hexdigest()[:24].upper()
 def add(object_name, **value):
     key = uid(object_name); objects[key] = value; return key
 sources = sorted((root / "TopMovies").rglob("*.swift"))
-resources = [root / "TopMovies/Resources/TMDB.png", root / "TopMovies/Resources/AppIcon.icns"]
+resources = [root / "TopMovies/Resources/TMDB.png", root / "TopMovies/Resources/AppIcon.icns", root / "TopMovies/Resources/AppLogo.png"]
 refs, source_builds, resource_builds = [], [], []
 for file in sources + resources:
     path = str(file.relative_to(root))
@@ -27,7 +27,7 @@ sp = add("sources", isa="PBXSourcesBuildPhase", buildActionMask=2147483647, file
 rp = add("resources", isa="PBXResourcesBuildPhase", buildActionMask=2147483647, files=resource_builds, runOnlyForDeploymentPostprocessing=0)
 fp = add("frameworks", isa="PBXFrameworksBuildPhase", buildActionMask=2147483647, files=[], runOnlyForDeploymentPostprocessing=0)
 common = {"MACOSX_DEPLOYMENT_TARGET":"14.0", "SDKROOT":"macosx", "SWIFT_VERSION":"6.0", "CLANG_ENABLE_MODULES":"YES", "ENABLE_USER_SCRIPT_SANDBOXING":"YES"}
-app = {"PRODUCT_NAME":"TopMovies", "PRODUCT_BUNDLE_IDENTIFIER":"com.topmovies.mac", "GENERATE_INFOPLIST_FILE":"YES", "INFOPLIST_KEY_LSApplicationCategoryType":"public.app-category.entertainment", "INFOPLIST_KEY_CFBundleDisplayName":"TopMovies", "INFOPLIST_KEY_CFBundleIconFile":"AppIcon", "INFOPLIST_KEY_NSHumanReadableCopyright":"Copyright © 2026 TopMovies contributors", "MARKETING_VERSION":"0.1.0", "CURRENT_PROJECT_VERSION":"1", "CODE_SIGN_STYLE":"Automatic", "ENABLE_APP_SANDBOX":"YES", "CODE_SIGN_ENTITLEMENTS":"TopMovies/Resources/TopMovies.entitlements", "COMBINE_HIDPI_IMAGES":"YES", "SWIFT_EMIT_LOC_STRINGS":"YES", "INFOPLIST_KEY_CFBundleDevelopmentRegion":"en"}
+app = {"PRODUCT_NAME":"TopMovies", "PRODUCT_BUNDLE_IDENTIFIER":"com.topmovies.mac", "GENERATE_INFOPLIST_FILE":"NO", "INFOPLIST_FILE":"TopMovies/Resources/Info.plist", "MARKETING_VERSION":"0.1.0", "CURRENT_PROJECT_VERSION":"1", "CODE_SIGN_STYLE":"Automatic", "ENABLE_APP_SANDBOX":"YES", "CODE_SIGN_ENTITLEMENTS":"TopMovies/Resources/TopMovies.entitlements", "COMBINE_HIDPI_IMAGES":"YES", "SWIFT_EMIT_LOC_STRINGS":"YES"}
 def configs(name, settings):
     values=[]
     for mode in ["Debug", "Release"]:

@@ -179,6 +179,7 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
     public var includeUnknown = false
     public var releaseWindow = "Last 30 days"
     public var minimumAge: AgeRating = .any
+    public var includeFutureYears: Bool = false
     public init() {}
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -198,6 +199,7 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
         includeUnknown = try container.decodeIfPresent(Bool.self, forKey: .includeUnknown) ?? false
         releaseWindow = try container.decodeIfPresent(String.self, forKey: .releaseWindow) ?? "Last 30 days"
         minimumAge = try container.decodeIfPresent(AgeRating.self, forKey: .minimumAge) ?? .any
+        includeFutureYears = try container.decodeIfPresent(Bool.self, forKey: .includeFutureYears) ?? false
     }
     public var dateValidationMessage: String? {
         let formatter = DateFormatter()
@@ -241,6 +243,16 @@ public struct CatalogFilter: Codable, Equatable, Sendable {
         if (!fromDate.isEmpty || !toDate.isEmpty) && item.releaseDate.isEmpty { return false }
         if !fromDate.isEmpty && item.releaseDate < fromDate { return false }
         if !toDate.isEmpty && item.releaseDate > toDate { return false }
+        if !includeFutureYears {
+            let currentYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+            let maxAllowedYear: Int = {
+                if !toDate.isEmpty, let yearPrefix = toDate.split(separator: "-").first, let customYear = Int(yearPrefix) {
+                    return max(currentYear, customYear)
+                }
+                return currentYear
+            }()
+            if let itemYear = Int(item.year), itemYear > maxAllowedYear { return false }
+        }
         if item.rating < minimumRating || item.votes < minimumVotes { return false }
         if maximumRuntime > 0 && (item.runtime == nil || item.runtime! > maximumRuntime) { return false }
         if !query.isEmpty && !(item.title + " " + item.originalTitle).localizedStandardContains(query) { return false }

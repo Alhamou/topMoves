@@ -131,14 +131,57 @@ struct DetailView: View {
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) { Text(title).font(.title3.weight(.semibold)); content() }
     }
+    private func avatarColor(for name: String) -> Color {
+        let palette: [Color] = [
+            Theme.accent,
+            Color(red: 0.35, green: 0.65, blue: 0.85),
+            Color(red: 0.85, green: 0.45, blue: 0.45),
+            Color(red: 0.45, green: 0.75, blue: 0.55),
+            Color(red: 0.75, green: 0.55, blue: 0.85),
+            Color(red: 0.90, green: 0.65, blue: 0.35)
+        ]
+        let hash = abs(name.hashValue)
+        return palette[hash % palette.count]
+    }
+    private func initials(for name: String) -> String {
+        let parts = name.split(separator: " ").filter { !$0.isEmpty }
+        if parts.count >= 2, let first = parts.first?.first, let last = parts.last?.first {
+            return "\(first)\(last)".uppercased()
+        }
+        return String(name.prefix(2)).uppercased()
+    }
     private func peopleSection(_ title: String, people: [Person]) -> some View {
         section(title) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 205))], alignment: .leading, spacing: 14) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], alignment: .leading, spacing: 14) {
                 ForEach(people, id: \.self) { person in
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: "person.crop.circle").font(.title2).foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: 4) { Text(person.name).font(.callout.weight(.medium)); Text(person.role).font(.caption).foregroundStyle(.secondary) }
-                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    let color = avatarColor(for: person.name)
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [color.opacity(0.35), color.opacity(0.12)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .overlay(Circle().stroke(color.opacity(0.45), lineWidth: 1.2))
+                            Text(initials(for: person.name))
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                        }
+                        .frame(width: 40, height: 40)
+                        .shadow(color: color.opacity(0.2), radius: 3, x: 0, y: 1)
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(person.name).font(.callout.weight(.medium)).lineLimit(1)
+                            Text(person.role).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    }
+                    .padding(9)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.surface.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.06), lineWidth: 1))
                 }
             }
         }

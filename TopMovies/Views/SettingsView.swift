@@ -8,7 +8,24 @@ struct SettingsView: View {
     @State private var saved = false
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HStack { Text("Settings & Sources").font(.title2.weight(.semibold)); Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.cancelAction) }
+            HStack(spacing: 12) {
+                if let logo = Bundle.main.url(forResource: "AppLogo", withExtension: "png").flatMap({ NSImage(contentsOf: $0) })
+                    ?? Bundle.main.url(forResource: "AppIcon", withExtension: "icns").flatMap({ NSImage(contentsOf: $0) })
+                    ?? NSImage(named: "AppLogo") {
+                    Image(nsImage: logo)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 32, height: 32)
+                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Settings & Sources").font(.title2.weight(.semibold))
+                    Text("TopMovies for Mac · v0.1.0").font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
+            }
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {

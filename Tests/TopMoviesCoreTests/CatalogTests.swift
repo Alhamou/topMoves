@@ -50,6 +50,23 @@ import Testing
     #expect(!filters.allows(item))
 }
 
+@Test func futureYearsAreExcludedByDefault() {
+    let filters = CatalogFilter()
+    let currentYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+    let futureItem = MediaItem(id: 99, kind: .movie, title: "Future Sequel", releaseDate: "\(currentYear + 2)-05-01", certification: "PG")
+    let currentItem = MediaItem(id: 100, kind: .movie, title: "Current Film", releaseDate: "\(currentYear)-05-01", certification: "PG")
+    #expect(!filters.allows(futureItem))
+    #expect(filters.allows(currentItem))
+
+    var permissiveFilters = filters
+    permissiveFilters.includeFutureYears = true
+    #expect(permissiveFilters.allows(futureItem))
+
+    var explicitDateFilters = filters
+    explicitDateFilters.toDate = "\(currentYear + 2)-12-31"
+    #expect(explicitDateFilters.allows(futureItem))
+}
+
 @Test func recommendationsExcludeWatchedAndRejected() {
     let items = DemoCatalog.items
     var library = UserLibrary()

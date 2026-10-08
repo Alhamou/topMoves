@@ -230,7 +230,12 @@ public actor TMDBClient {
                 if feed == .releases { dates = filters.releaseDates() }
                 let prefix = kind == .movie ? "primary_release_date" : "first_air_date"
                 if !dates.0.isEmpty { query.append(URLQueryItem(name: "\(prefix).gte", value: dates.0)) }
-                if !dates.1.isEmpty { query.append(URLQueryItem(name: "\(prefix).lte", value: dates.1)) }
+                if !dates.1.isEmpty {
+                    query.append(URLQueryItem(name: "\(prefix).lte", value: dates.1))
+                } else if !filters.includeFutureYears {
+                    let currentYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+                    query.append(URLQueryItem(name: "\(prefix).lte", value: "\(currentYear)-12-31"))
+                }
                 if filters.maximumRuntime > 0 { query.append(URLQueryItem(name: "with_runtime.lte", value: String(filters.maximumRuntime))) }
                 if !filters.includeUnknown {
                     query.append(URLQueryItem(name: "certification_country", value: "US"))

@@ -77,9 +77,10 @@ struct FilterPanel: View {
             }
             Divider().opacity(0.4)
             HStack(spacing: 24) {
-                Label("Content & Age Rating", systemImage: "shield.lefthalf.filled").font(.caption.weight(.medium))
+                Label("Content & Filters", systemImage: "shield.lefthalf.filled").font(.caption.weight(.medium))
                 Toggle("Include R-rated movies", isOn: $store.filters.includeRestricted)
                 Toggle("Reveal unknown ratings", isOn: $store.filters.includeUnknown)
+                Toggle("Allow future years (> \(Calendar.current.component(.year, from: Date())))", isOn: $store.filters.includeFutureYears)
             }.toggleStyle(.checkbox).font(.caption)
             Text("Minimum age limits results to titles rated at or above the selected threshold (13+, 16+, or 18+). R-rated movies are included by default. Series ratings may vary by episode.")
                 .font(.caption2).foregroundStyle(.secondary)
