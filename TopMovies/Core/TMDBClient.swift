@@ -92,7 +92,17 @@ private struct DetailDTO: Decodable {
     }
     struct Videos: Decodable { let results: [Trailer] }
     struct Credits: Decodable {
-        struct Member: Decodable { let id: Int; let name: String; let character: String?; let job: String? }
+        struct Member: Decodable {
+            let id: Int
+            let name: String
+            let character: String?
+            let job: String?
+            let profilePath: String?
+            enum CodingKeys: String, CodingKey {
+                case id, name, character, job
+                case profilePath = "profile_path"
+            }
+        }
         let cast: [Member]; let crew: [Member]
     }
     struct SeasonDTO: Decodable {
@@ -125,8 +135,8 @@ private struct DetailDTO: Decodable {
             }.first?.certification
         } else { item.certification = contentRatings?.results.first { $0.country == "US" }?.rating }
         item.trailers = Trailer.playable(videos?.results ?? [])
-        item.cast = credits?.cast.prefix(12).map { Person(id: $0.id, name: $0.name, role: $0.character ?? "Cast") } ?? []
-        item.crew = credits?.crew.filter { ["Director", "Writer", "Screenplay", "Executive Producer"].contains($0.job ?? "") }.prefix(8).map { Person(id: $0.id, name: $0.name, role: $0.job ?? "Crew") } ?? []
+        item.cast = credits?.cast.prefix(12).map { Person(id: $0.id, name: $0.name, role: $0.character ?? "Cast", profilePath: $0.profilePath) } ?? []
+        item.crew = credits?.crew.filter { ["Director", "Writer", "Screenplay", "Executive Producer"].contains($0.job ?? "") }.prefix(8).map { Person(id: $0.id, name: $0.name, role: $0.job ?? "Crew", profilePath: $0.profilePath) } ?? []
         item.seasons = seasons?.filter { $0.seasonNumber > 0 }.map {
             Season(id: $0.id, number: $0.seasonNumber, name: $0.name, episodeCount: $0.episodeCount, airDate: $0.airDate ?? "", overview: $0.overview ?? "")
         } ?? []

@@ -271,6 +271,10 @@ final class AppStore {
     func recommendationReason(_ item: MediaItem) -> String {
         Ranking.recommendations([item], library: library, preferredGenre: preference).first?.reason ?? ""
     }
+    func detailItem(_ item: MediaItem) async throws -> MediaItem {
+        guard !item.isDemo, let client else { return item }
+        return try await client.detail(item)
+    }
     func detailVideos(_ item: MediaItem) async throws -> [Trailer] {
         guard !item.isDemo, let client else { return [] }; return try await client.trailers(item)
     }

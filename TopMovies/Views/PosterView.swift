@@ -22,27 +22,29 @@ final class PosterCache {
             }
         }
     }
-    func image(path: String) async -> NSImage? {
+    func image(path: String, size: String = "w500") async -> NSImage? {
         guard path.hasPrefix("/"), !path.contains(".."), !path.contains("?"), !path.contains("#") else { return nil }
-        if let image = memory.object(forKey: path as NSString) { return image }
-        if let task = pending[path] { return await task.value }
-        let filename = SHA256.hash(data: Data(path.utf8)).map { String(format: "%02x", $0) }.joined()
+        let cacheKey = "\(size)\(path)" as NSString
+        if let image = memory.object(forKey: cacheKey) { return image }
+        let keyString = "\(size)\(path)"
+        if let task = pending[keyString] { return await task.value }
+        let filename = SHA256.hash(data: Data(keyString.utf8)).map { String(format: "%02x", $0) }.joined()
         let file = directory.appendingPathComponent(filename)
         let session = session
         let task = Task<NSImage?, Never> {
             if let date = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
                Date().timeIntervalSince(date) < 604800, let image = NSImage(contentsOf: file) { return image }
-            guard let url = URL(string: "https://image.tmdb.org/t/p/w500\(path)"),
+            guard let url = URL(string: "https://image.tmdb.org/t/p/\(size)\(path)"),
                   let (data, response) = try? await session.data(from: url),
                   let response = response as? HTTPURLResponse, response.statusCode == 200,
                   data.count < 8 * 1024 * 1024, let image = NSImage(data: data) else { return nil }
             try? data.write(to: file, options: .atomic)
             return image
         }
-        pending[path] = task
+        pending[keyString] = task
         let result = await task.value
-        pending.removeValue(forKey: path)
-        if let result { memory.setObject(result, forKey: path as NSString, cost: 500 * 750 * 4) }
+        pending.removeValue(forKey: keyString)
+        if let result { memory.setObject(result, forKey: cacheKey, cost: 500 * 750 * 4) }
         return result
     }
 }

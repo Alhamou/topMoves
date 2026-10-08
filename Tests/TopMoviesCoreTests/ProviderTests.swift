@@ -60,6 +60,15 @@ private actor FixtureTransport: HTTPTransport {
     #expect(item.runtime == 44)
     #expect(item.revenue == nil)
 }
+@Test func creditsProfilePathIsDecodedForCastAndCrew() async throws {
+    let body = """
+    {"title":"Movie with cast","genres":[],"credits":{"cast":[{"id":101,"name":"Actor One","character":"Lead","profile_path":"/actor1.jpg"}],"crew":[{"id":202,"name":"Director One","job":"Director","profile_path":"/dir1.jpg"}]}}
+    """
+    let client = TMDBClient(token: "fixture", transport: FixtureTransport(body: body))
+    let item = try await client.detail(MediaItem(id: 1, kind: .movie, title: "Fixture"))
+    #expect(item.cast.first?.profilePath == "/actor1.jpg")
+    #expect(item.crew.first?.profilePath == "/dir1.jpg")
+}
 @Test func requestedReleaseWindowMeansFirstAirDateForTV() async throws {
     let date = Date(timeIntervalSince1970: 1736942400) // January 2025
     var filter = CatalogFilter()

@@ -12,6 +12,14 @@ public struct Person: Codable, Hashable, Sendable, Identifiable {
     public let id: Int
     public let name: String
     public let role: String
+    public let profilePath: String?
+
+    public init(id: Int, name: String, role: String, profilePath: String? = nil) {
+        self.id = id
+        self.name = name
+        self.role = role
+        self.profilePath = profilePath
+    }
 }
 public struct Season: Codable, Hashable, Sendable, Identifiable {
     public let id: Int
