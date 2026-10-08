@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Custom user-created lists.
 - Additional language metadata support.
 
+## [0.1.1] - 2026-10-08
+
+### Changed
+- **Branding & UI Polish**: Refined app logo, removed extraneous card borders, and enhanced cast photo presentation with interactive hover zoom.
+- **Infinite Scrolling**: Streamlined discovery view with seamless automated progressive pagination.
+- **Concurrency & Stability**: Improved actor-isolated caching in `PosterCache` for strict Swift 6 Sendable compliance.
+- **CI & Toolchain**: Updated GitHub Actions runner to macOS 15 with Swift 6 and Xcode 16.
+
+### Added
+- High-fidelity live macOS UI screenshot showcase in documentation.
+
 ---
 
 ## [0.1.0] - 2026-10-08
