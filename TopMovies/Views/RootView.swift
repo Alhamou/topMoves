@@ -333,7 +333,9 @@ struct PosterCard: View {
             HStack(spacing: 5) {
                 Text(item.year.isEmpty ? "Date unknown" : item.year)
                 Text("·")
-                Text(item.certification ?? "US unknown")
+                Text(item.ageRatingDisplay)
+                    .font(.caption.weight(item.ageRatingDisplay == "18+" ? .semibold : .medium))
+                    .foregroundStyle(item.ageRatingDisplay == "18+" ? Color(red: 0.95, green: 0.45, blue: 0.45) : (item.ageRatingDisplay == "16+" ? Color(red: 0.95, green: 0.65, blue: 0.35) : (item.ageRatingDisplay == "13+" ? Color(red: 0.92, green: 0.78, blue: 0.35) : .secondary)))
                 Spacer(minLength: 0)
                 if isWatched {
                     HStack(spacing: 2) {

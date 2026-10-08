@@ -35,7 +35,7 @@ struct DetailView: View {
                             Text("\(currentItem.kind == .tv ? "First aired" : "Release date"): \(currentItem.releaseDate.isEmpty ? "Not provided" : currentItem.releaseDate)").font(.caption).foregroundStyle(.secondary)
                             Text(currentItem.genres.joined(separator: " · ")).font(.callout).foregroundStyle(Theme.accent)
                             HStack(alignment: .top, spacing: 18) {
-                                metric("US Content Rating", value: currentItem.certification ?? "Unknown", source: currentItem.isDemo ? "Illustrative label" : "TMDB · United States", symbol: "shield.lefthalf.filled")
+                                metric("Age Rating", value: currentItem.certification != nil ? "\(currentItem.ageRatingDisplay) (\(currentItem.certification!))" : currentItem.ageRatingDisplay, source: currentItem.isDemo ? "Illustrative label" : "TMDB · United States", symbol: "shield.lefthalf.filled")
                                 metric("Audience", value: currentItem.votes > 0 ? "\(currentItem.rating.formatted(.number.locale(Locale(identifier: "en_US")).precision(.fractionLength(1)))) / 10" : "Unrated", source: currentItem.isDemo ? "Fictional · \(currentItem.votes.formatted(.number.locale(Locale(identifier: "en_US")))) votes" : "TMDB · \(currentItem.votes.formatted(.number.locale(Locale(identifier: "en_US")))) votes", symbol: "star.fill")
                             }
                             metric("Critics", value: "Not available", source: "No licensed critic-score source connected", symbol: "quote.bubble")

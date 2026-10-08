@@ -85,6 +85,7 @@ public struct MediaItem: Codable, Hashable, Identifiable, Sendable {
     public var isDemo: Bool
     public var key: String { "\(isDemo ? "demo:" : "")\(kind.rawValue):\(id)" }
     public var year: String { String(releaseDate.prefix(4)) }
+    public var ageRatingDisplay: String { AgeRating.display(for: certification, kind: kind) }
     public init(id: Int, kind: MediaKind, title: String, originalTitle: String = "", overview: String = "", releaseDate: String = "", originalLanguage: String = "en", countries: [String] = [], genres: [String] = [], genreIDs: [Int] = [], rating: Double = 0, votes: Int = 0, popularity: Double = 0, runtime: Int? = nil, certification: String? = nil, adult: Bool = false, posterPath: String? = nil, revenue: Int? = nil, status: String = "", cast: [Person] = [], crew: [Person] = [], trailers: [Trailer] = [], seasons: [Season] = [], isDemo: Bool = false) {
         self.id = id; self.kind = kind; self.title = title; self.originalTitle = originalTitle
         self.overview = overview; self.releaseDate = releaseDate; self.originalLanguage = originalLanguage
@@ -167,6 +168,37 @@ public enum AgeRating: String, Codable, CaseIterable, Sendable {
                 return num
             }
             return nil
+        }
+    }
+
+    public static func display(for certification: String?, kind: MediaKind = .movie) -> String {
+        guard let raw = certification?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return "Unrated"
+        }
+        let cert = raw.uppercased()
+        switch cert {
+        case "G", "TV-G", "TV-Y", "U", "ALL":
+            return "All"
+        case "TV-Y7", "TV-Y7-FV":
+            return "7+"
+        case "PG", "TV-PG":
+            return "7+"
+        case "PG-13":
+            return "13+"
+        case "TV-14":
+            return "14+"
+        case "16", "16+", "TV-16", "MA15+", "R16", "15", "15+":
+            return "16+"
+        case "NC-17", "R", "TV-MA", "18", "18+", "R18", "X", "XXX":
+            return "18+"
+        case "NR", "UNRATED", "NOT RATED":
+            return "Unrated"
+        default:
+            let digits = cert.filter { $0.isNumber }
+            if let num = Int(digits), num > 0 {
+                return "\(num)+"
+            }
+            return raw
         }
     }
 }

@@ -168,3 +168,16 @@ import Testing
     #expect(filters.allows(tvMA))
 }
 
+@Test func ageRatingDisplayFormatsClearNumbers() {
+    #expect(MediaItem(id: 1, kind: .movie, title: "A", certification: "R").ageRatingDisplay == "18+")
+    #expect(MediaItem(id: 2, kind: .movie, title: "B", certification: "NC-17").ageRatingDisplay == "18+")
+    #expect(MediaItem(id: 3, kind: .tv, title: "C", certification: "TV-MA").ageRatingDisplay == "18+")
+    #expect(MediaItem(id: 4, kind: .movie, title: "D", certification: "PG-13").ageRatingDisplay == "13+")
+    #expect(MediaItem(id: 5, kind: .tv, title: "E", certification: "TV-14").ageRatingDisplay == "14+")
+    #expect(MediaItem(id: 6, kind: .movie, title: "F", certification: "16").ageRatingDisplay == "16+")
+    #expect(MediaItem(id: 7, kind: .movie, title: "G", certification: "PG").ageRatingDisplay == "7+")
+    #expect(MediaItem(id: 8, kind: .movie, title: "H", certification: "G").ageRatingDisplay == "All")
+    #expect(MediaItem(id: 9, kind: .movie, title: "I", certification: nil).ageRatingDisplay == "Unrated")
+}
+
+
