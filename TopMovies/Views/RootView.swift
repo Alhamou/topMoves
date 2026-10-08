@@ -198,15 +198,13 @@ struct RootView: View {
                 if store.hasMore {
                     HStack {
                         Spacer()
-                        Button { store.loadMore() } label: {
-                            HStack {
-                                if store.isLoading { ProgressView().controlSize(.small) }
-                                Text(store.isLoading ? "Loading…" : "Load more posters")
-                            }
-                        }.buttonStyle(.bordered).disabled(store.isLoading)
+                        if store.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
                         Spacer()
                     }
-                    .padding(.vertical, 12)
+                    .frame(height: store.isLoading ? 32 : 1)
                     .onAppear {
                         if store.visibleItems.count >= 6 && !store.isLoading && store.hasMore {
                             store.loadMore()
